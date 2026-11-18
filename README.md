@@ -27,9 +27,11 @@
 
 ## 在小米手机上使用
 
-1. 用手机浏览器（Chrome / 系统浏览器）打开 **GitHub Pages 地址**（见仓库 Settings → Pages）。
+**在线地址：https://zeternityh.github.io/KaoGzhenti/**
+
+1. 用小米手机浏览器（Chrome / 系统浏览器）打开上面的地址。
 2. 浏览器菜单选择 **「添加到主屏幕」/「安装应用」**。
-3. 桌面出现「考公真题」图标，点开即可全屏刷题，首次打开后大多数内容可离线使用。
+3. 桌面出现「考公真题」图标，点开即可全屏刷题；首次打开后应用外壳与已浏览的题库可离线使用。
 
 > 澎湃 OS 基于 Android，完整支持 PWA 安装与 Service Worker 离线缓存。
 
@@ -40,7 +42,7 @@
 90-图片/                        题目图与公式图
 index.html / styles.css / app.js / sw.js / manifest.webmanifest   PWA 应用
 data/index.json                 题库索引
-data/papers/*.json              结构化题目（构建生成，按需加载）
+data/shards/*.json              结构化题目分片（74 片，按需加载并缓存）
 scripts/build-data.mjs          数据构建脚本
 ```
 
