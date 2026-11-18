@@ -144,6 +144,7 @@
     try {
       toast('加载试卷中…');
       const p = await paperOf(state.catalog.papers.find(x => x.id === id));
+      tagQuestions(id, p.questions);
       state.paper = p; state.paperId = id; state.randomPool = null;
       const pr = state.progress[id];
       state.answers = pr?.answers || {}; state.revealed = pr?.revealed || {}; state.idx = pr?.idx || 0;
@@ -189,7 +190,7 @@
         if (picked.length >= count) break;
         const data = await paperOf(p);
         seenPapers[p.id] = data;
-        data.questions.forEach((q, i) => { q._pid = p.id; q._i = i; q._module = p.module; });
+        data.questions.forEach((q, i) => { q._pid = p.id; q._i = i; q._module = p.module; q._key = `${p.id}#${i}`; });
         picked.push(...data.questions);
       }
       state.randomPool = shuffle(picked).slice(0, count);
@@ -205,7 +206,17 @@
     const qs = state.paper.questions;
     return state.randomPool ? qs[state.idx] : null;
   }
-  function qidOf(q) { return q.qid || `${q._pid}-${q._i}`; }
+  // 用「所在卷+题号」作唯一键：同一 qid 在多套卷中重复出现，仅用 qid 会串答案
+  function qidOf(q) {
+    if (q._key) return q._key;
+    return q.qid || `${q._pid || ''}#${q._i ?? 0}`;
+  }
+  // 给一套卷的题目打上稳定来源标记（幂等）
+  function tagQuestions(pid, questions) {
+    questions.forEach((q, i) => { if (q._pid === undefined) q._pid = pid; if (q._i === undefined) q._i = i; q._key = `${q._pid}#${i}`; });
+    return questions;
+  }
+  function rawQid(q) { return q.qid || ''; }
 
   function renderQuiz() {
     const p = state.paper; if (!p) return;
@@ -227,7 +238,7 @@
       </div>
       ${material}
       <div class="qcard">
-        <div class="qtag">${esc(q._module || p.module || '行测')} · qid ${esc(qid)}</div>
+        <div class="qtag">${esc(q._module || p.module || '行测')} · qid ${esc(rawQid(q))}</div>
         <div class="qstem">${q.stem}</div>
         <div class="opts">${q.options.map(o => {
           let cls = 'opt';
@@ -283,7 +294,7 @@
     state.stats.byModule[m] = state.stats.byModule[m] || { total: 0, correct: 0 };
     state.stats.byModule[m].total++; if (right) state.stats.byModule[m].correct++;
     save('kg_stats', state.stats);
-    if (!right) { state.wrong[qid] = { paperId: state.paperId, no: state.idx, module: m }; save('kg_wrong', state.wrong); }
+    if (!right) { state.wrong[qid] = { paperId: state.paperId || q._pid || null, no: q._i ?? state.idx, module: m }; save('kg_wrong', state.wrong); }
     else if (state.wrong[qid]) { delete state.wrong[qid]; save('kg_wrong', state.wrong); }
     saveProgress(); renderQuiz();
   }
@@ -342,7 +353,7 @@
       const shard = await loadShard(p.shard);
       for (const [pid, data] of Object.entries(shard)) {
         const meta = state.catalog.papers.find(x => x.id === pid);
-        data.questions.forEach((q, i) => { const qid = qidOf(q); if (state.marks[qid]) { q._pid = pid; q._i = i; q._module = meta?.module || ''; found.push(q); } });
+        data.questions.forEach((q, i) => { const key = `${pid}#${i}`; if (state.marks[key]) { q._pid = pid; q._i = i; q._key = key; q._module = meta?.module || ''; found.push(q); } });
       }
       if (found.length >= ids.length) break;
     }
@@ -392,13 +403,16 @@
   $('#sheetMask').onclick = closeBottomSheet;
 
   /* ---------- 更多菜单 ---------- */
-  topbar.more.onclick = () => openBottomSheet(`<button class="sheet-close" data-close>×</button><h3>更多</h3>
-    <div class="row"><span>题库版本</span><span style="color:var(--muted)">2016–2026 · 58890题</span></div>
-    <div class="row"><span>离线使用</span><span style="color:var(--muted)">${navigator.onLine ? '已联网' : '离线中'}</span></div>
-    <div class="row"><button class="btn ghost" style="flex:1" id="mHome">返回首页</button></div>
-    <div class="row"><button class="btn ghost" style="flex:1" id="mFav">我的收藏</button></div>`);
-  $('#mHome') && ($('#mHome').onclick = () => { closeBottomSheet(); navigate('home'); });
-  $('#mFav') && ($('#mFav').onclick = () => { closeBottomSheet(); openFav(); });
+  topbar.more.onclick = () => {
+    openBottomSheet(`<button class="sheet-close" data-close>×</button><h3>更多</h3>
+      <div class="row"><span>题库版本</span><span style="color:var(--muted)">2016–2026 · 58890题</span></div>
+      <div class="row"><span>离线使用</span><span style="color:var(--muted)">${navigator.onLine ? '已联网' : '离线中'}</span></div>
+      <div class="row"><button class="btn ghost" style="flex:1" id="mHome">返回首页</button></div>
+      <div class="row"><button class="btn ghost" style="flex:1" id="mFav">我的收藏</button></div>`);
+    // 菜单内容刚插入 DOM，必须在此之后再绑定事件
+    $('#mHome').onclick = () => { closeBottomSheet(); navigate('home'); };
+    $('#mFav').onclick = () => { closeBottomSheet(); openFav(); };
+  };
 
   // 事件委托：sheet 关闭按钮
   document.addEventListener('click', e => { if (e.target.matches('[data-close]')) closeBottomSheet(); });
