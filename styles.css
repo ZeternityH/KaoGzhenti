@@ -13,6 +13,8 @@
   }
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+/* hidden 属性必须压过下面的 display:flex/grid，否则弹层/横幅关不掉 */
+[hidden]{display:none !important}
 html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
   font-family:-apple-system,"PingFang SC","MiSans","Microsoft YaHei",Roboto,sans-serif;
   font-size:16px;line-height:1.65;-webkit-text-size-adjust:100%}
