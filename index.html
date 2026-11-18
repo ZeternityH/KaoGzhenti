@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>考公真题 · 行测刷题</title>
+<meta name="theme-color" content="#1e40af" />
+<meta name="description" content="2016–2026 公务员行测真题 58890 题，可离线刷题，适配小米澎湃OS。" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<link rel="manifest" href="./manifest.webmanifest" />
+<link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+<link rel="icon" href="./icon-192.png" />
+<link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+<div id="app">
+  <!-- 顶部栏 -->
+  <header class="topbar" id="topbar">
+    <button class="icon-btn" id="btnBack" aria-label="返回" hidden>
+      <svg viewBox="0 0 24 24"><path d="M15.5 4.5 8 12l7.5 7.5" /></svg>
+    </button>
+    <div class="brand" id="brand">
+      <span class="brand-mark">考</span>
+      <div>
+        <div class="brand-title">考公真题</div>
+        <div class="brand-sub">行测刷题 · 2016–2026</div>
+      </div>
+    </div>
+    <div class="top-title" id="topTitle" hidden></div>
+    <button class="icon-btn" id="btnMore" aria-label="更多">
+      <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+    </button>
+  </header>
+
+  <main id="main"><!-- 视图渲染区 --></main>
+
+  <!-- 底部导航 -->
+  <nav class="bottomnav" id="bottomnav">
+    <button data-nav="home" class="active"><svg viewBox="0 0 24 24"><path d="M3 11 12 4l9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>首页</span></button>
+    <button data-nav="practice"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M8 10h8M8 14h5"/></svg><span>刷题</span></button>
+    <button data-nav="wrong"><svg viewBox="0 0 24 24"><path d="M12 3 2 20h20z"/><path d="M12 9v5M12 17h.01"/></svg><span>错题本</span></button>
+    <button data-nav="stats"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>统计</span></button>
+  </nav>
+
+  <div class="toast" id="toast"></div>
+  <div class="sheet-mask" id="sheetMask" hidden></div>
+  <div class="sheet" id="sheet" hidden></div>
+  <div class="install-banner" id="installBanner" hidden>
+    <span id="installText">安装到桌面，离线也能刷题</span>
+    <button id="btnInstall">安装</button>
+    <button id="btnInstallClose" aria-label="关闭">×</button>
+  </div>
+</div>
+<script src="./app.js"></script>
+</body>
+</html>
