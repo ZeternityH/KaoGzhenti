@@ -1,5 +1,5 @@
 /* 考公真题 · Service Worker —— 应用外壳 + 题库数据 + 图片 离线缓存 */
-const CACHE = 'kaogz-v1';
+const CACHE = 'kaogz-v2';
 const SHELL = [
   './', './index.html', './styles.css', './app.js', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './apple-touch-icon.png', './data/index.json'
