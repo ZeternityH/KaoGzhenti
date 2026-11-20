@@ -161,6 +161,23 @@
   }
 
   /* ---------- 随机练习 ---------- */
+  let randomLoading = false;   // 组题进行中锁，防止连点启动多个并行流程
+  let randomToken = 0;         // 每次组题递增序号，旧流程完成时不许覆盖新结果
+
+  // 组题期间禁用所有模块按钮并显示加载态，避免用户误以为没响应而反复点击
+  function setRandButtonsLoading(on) {
+    $$('[data-rand]', main).forEach(b => {
+      b.disabled = on;
+      if (on) {
+        if (!b.dataset.origHtml) b.dataset.origHtml = b.innerHTML;
+        b.innerHTML = '<span class="qc-icon blue">⏳</span><span><b>组题中…</b><span>请稍候</span></span>';
+      } else if (b.dataset.origHtml) {
+        b.innerHTML = b.dataset.origHtml;
+        delete b.dataset.origHtml;
+      }
+    });
+  }
+
   function renderPracticeHub() {
     const c = state.catalog;
     main.innerHTML = `<div class="view">
@@ -177,27 +194,48 @@
     </div>`;
     $$('[data-rand]', main).forEach(b => b.onclick = () => startRandom(b.dataset.rand, +$('#randCount').value));
     $('#goFav').onclick = openFav;
+    // 若组题仍在进行中（例如切走再回到本页），保持按钮禁用态
+    if (randomLoading) setRandButtonsLoading(true);
   }
 
   async function startRandom(moduleName, count) {
+    // 防连点：已在组题中则直接忽略本次点击
+    if (randomLoading) return;
+    randomLoading = true;
+    const token = ++randomToken;
+    setRandButtonsLoading(true);
     try {
       toast('正在抽题…');
       let pool = state.catalog.papers.filter(p => moduleName === '全部' || p.module === moduleName);
-      // 随机挑若干套卷，收集够 count 道题
       pool = shuffle(pool.slice());
-      const picked = [], seenPapers = {};
+
+      // 先并发预热需要的分片（首次组题的主要耗时在网络下载），带缓存复用
+      const needed = new Set();
+      for (const p of pool) { needed.add(p.shard); if (needed.size >= 6) break; }
+      await Promise.all([...needed].map(s => loadShard(s).catch(() => ({}))));
+      if (token !== randomToken) return; // 已被更新的请求取代
+
+      // 分片已在内存，后续 paperOf 同步命中缓存，不会再卡顿
+      const picked = [];
       for (const p of pool) {
         if (picked.length >= count) break;
         const data = await paperOf(p);
-        seenPapers[p.id] = data;
+        if (!data) continue;
         data.questions.forEach((q, i) => { q._pid = p.id; q._i = i; q._module = p.module; q._key = `${p.id}#${i}`; });
         picked.push(...data.questions);
       }
+      if (token !== randomToken) return;
+      if (!picked.length) { toast('题库加载失败，请检查网络后重试'); return; }
+
       state.randomPool = shuffle(picked).slice(0, count);
       state.paper = { title: `随机练习 · ${moduleName} · ${state.randomPool.length}题`, questions: state.randomPool };
       state.paperId = null; state.answers = {}; state.revealed = {}; state.idx = 0;
       navigate('quiz', { title: '随机练习' });
     } catch (e) { toast('抽题失败：' + e.message); }
+    finally {
+      // 只有最后一次请求才负责解锁并恢复按钮；旧请求结束不动锁
+      if (token === randomToken) { randomLoading = false; setRandButtonsLoading(false); }
+    }
   }
   function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 
